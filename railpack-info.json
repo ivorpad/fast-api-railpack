@@ -1,0 +1,36 @@
+{
+  "railpackVersion": "0.0.43",
+  "resolvedPackages": {
+    "pipx": {
+      "name": "pipx",
+      "requestedVersion": "latest",
+      "resolvedVersion": "1.7.1",
+      "source": "railpack default"
+    },
+    "python": {
+      "name": "python",
+      "requestedVersion": "3.13.2",
+      "resolvedVersion": "3.13.2",
+      "source": "railpack default"
+    }
+  },
+  "metadata": {
+    "providers": "python",
+    "pythonHasPyproject": "true",
+    "pythonPackageManager": "poetry"
+  },
+  "detectedProviders": [
+    "python"
+  ],
+  "logs": [
+    {
+      "Level": "info",
+      "Msg": "Detected Python"
+    },
+    {
+      "Level": "info",
+      "Msg": "Using poetry"
+    }
+  ],
+  "success": true
+}

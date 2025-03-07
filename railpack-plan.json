@@ -1,0 +1,157 @@
+{
+  "steps": [
+    {
+      "name": "packages:mise",
+      "inputs": [
+        {
+          "image": "ghcr.io/railwayapp/railpack-builder:latest"
+        }
+      ],
+      "commands": [
+        {
+          "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y libpq-dev python3-dev'",
+          "customName": "install apt packages: libpq-dev python3-dev"
+        },
+        {
+          "path": "/mise/shims"
+        },
+        {
+          "path": "/etc/mise/config.toml",
+          "name": "mise.toml",
+          "customName": "create mise config"
+        },
+        {
+          "cmd": "sh -c 'mise trust -a \u0026\u0026 mise install'",
+          "customName": "install mise packages: pipx, python"
+        }
+      ],
+      "assets": {
+        "mise.toml": "[tools]\n  [tools.pipx]\n    version = \"1.7.1\"\n  [tools.python]\n    version = \"3.11.8\"\n"
+      },
+      "variables": {
+        "MISE_CACHE_DIR": "/mise/cache",
+        "MISE_CONFIG_DIR": "/mise",
+        "MISE_DATA_DIR": "/mise",
+        "MISE_INSTALLS_DIR": "/mise/installs",
+        "MISE_SHIMS_DIR": "/mise/shims"
+      },
+      "caches": [
+        "apt",
+        "apt-lists"
+      ]
+    },
+    {
+      "name": "install",
+      "inputs": [
+        {
+          "step": "packages:mise"
+        }
+      ],
+      "commands": [
+        {
+          "cmd": "python -m pip install --upgrade pip"
+        },
+        {
+          "src": "requirements.txt",
+          "dest": "requirements.txt"
+        },
+        {
+          "cmd": "python -m pip install -r requirements.txt"
+        },
+        {
+          "src": ".",
+          "dest": "."
+        }
+      ],
+      "variables": {
+        "PIP_DEFAULT_TIMEOUT": "100",
+        "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONFAULTHANDLER": "1",
+        "PYTHONHASHSEED": "random",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    {
+      "name": "build",
+      "inputs": [
+        {
+          "step": "install"
+        }
+      ],
+      "secrets": [
+        "*"
+      ]
+    },
+    {
+      "name": "packages:python-runtime-deps",
+      "inputs": [
+        {
+          "image": "ghcr.io/railwayapp/railpack-runtime:latest"
+        }
+      ],
+      "commands": [
+        {
+          "cmd": "sh -c 'apt-get update \u0026\u0026 apt-get install -y '",
+          "customName": "install apt packages: "
+        }
+      ],
+      "caches": [
+        "apt",
+        "apt-lists"
+      ]
+    }
+  ],
+  "caches": {
+    "apt": {
+      "directory": "/var/cache/apt",
+      "type": "locked"
+    },
+    "apt-lists": {
+      "directory": "/var/lib/apt/lists",
+      "type": "locked"
+    }
+  },
+  "deploy": {
+    "inputs": [
+      {
+        "step": "packages:python-runtime-deps"
+      },
+      {
+        "step": "packages:mise",
+        "include": [
+          "/mise/shims",
+          "/mise/installs",
+          "/usr/local/bin/mise",
+          "/etc/mise/config.toml",
+          "/root/.local/state/mise"
+        ]
+      },
+      {
+        "step": "install",
+        "include": [
+          "."
+        ]
+      },
+      {
+        "local": true,
+        "include": [
+          "."
+        ]
+      }
+    ],
+    "variables": {
+      "PIP_DEFAULT_TIMEOUT": "100",
+      "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONFAULTHANDLER": "1",
+      "PYTHONHASHSEED": "random",
+      "PYTHONUNBUFFERED": "1",
+      "BACKEND_CORS_ORIGINS": "[\"http://localhost\", \"http://localhost:8080\", \"https://localhost\", \"https://localhost:8080\"]"
+    },
+    "paths": [
+      "/mise/shims"
+    ],
+    "startCommand": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  }
+}
